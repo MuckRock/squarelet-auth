@@ -13,19 +13,23 @@ DISABLE_CREATE_AGENCY = getattr(settings, "SQUARELET_DISABLE_CREATE_AGENCY", Tru
 
 BYPASS_RATE_LIMIT_SECRET = getattr(settings, "SQUARELET_BYPASS_RATE_LIMIT_SECRET", "")
 
+INTENT = getattr(settings, "SQUARELET_INTENT", "")
+
 required_settings = [
     "SOCIAL_AUTH_SQUARELET_KEY",
     "SOCIAL_AUTH_SQUARELET_SECRET",
     "SQUARELET_ORGANIZATION_MODEL",
+    "BASE_URL",
 ]
 for setting in required_settings:
     if not hasattr(settings, setting):
         raise ImproperlyConfigured(
-            "You must define {settings} in settings to use SquareletAuth"
+            f"You must define {setting} in settings to use SquareletAuth"
         )
 
 SOCIAL_AUTH_SQUARELET_KEY = settings.SOCIAL_AUTH_SQUARELET_KEY
 SOCIAL_AUTH_SQUARELET_SECRET = settings.SOCIAL_AUTH_SQUARELET_SECRET
 ORGANIZATION_MODEL = settings.SQUARELET_ORGANIZATION_MODEL
+BASE_URL = getattr(settings, "BASE_URL")
 
 AUTH_USER_MODEL = settings.AUTH_USER_MODEL

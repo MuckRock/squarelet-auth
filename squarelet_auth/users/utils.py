@@ -6,9 +6,12 @@ from django.db import transaction
 import logging
 
 # SquareletAuth
-from squarelet_auth import organizations, settings
+from squarelet_auth import settings
 from squarelet_auth.organizations import get_organization_model
 from squarelet_auth.organizations.models import Membership
+from squarelet_auth.organizations.utils import (
+    squarelet_update_or_create as organization_update_or_create,
+)
 
 User = get_user_model()
 Organization = get_organization_model()
@@ -68,7 +71,7 @@ def _update_organizations(user, data):
 
     # process each organization
     for org_data in data.get("organizations", []):
-        organization, _ = organizations.utils.squarelet_update_or_create(
+        organization, _ = organization_update_or_create(
             uuid=org_data["uuid"], data=org_data
         )
         if organization in current_organizations:

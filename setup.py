@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="squarelet_auth",  # Replace with your own username
-    version="0.0.3",
+    version="0.0.21",
     author="Mitchell Kotler",
     author_email="mitch@muckrock.com",
     description="Django authentication against the MuckRock user service",
@@ -19,6 +19,11 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["celery", "django", "requests", "social-auth-core"],
+    install_requires=[
+        "celery",
+        "django",
+        "requests",
+        "social-auth-core[openidconnect]",
+    ],
     python_requires=">=3.6",
 )

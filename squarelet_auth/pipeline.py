@@ -7,6 +7,9 @@ from django.contrib.auth import get_user_model
 # Standard Library
 import logging
 
+# SquareletAuth
+from squarelet_auth.users.utils import squarelet_update_or_create
+
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
@@ -31,7 +34,7 @@ def associate_by_uuid(response, user=None, *args, **kwargs):
 def save_info(response, *args, **kwargs):
     """Update the user's info based on information from squarelet"""
     # pylint: disable=unused-argument
-    user, created = User.objects.squarelet_update_or_create(response["uuid"], response)
+    user, created = squarelet_update_or_create(response["uuid"], response)
     return {"user": user, "is_new": created}
 
 

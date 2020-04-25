@@ -1,6 +1,6 @@
 # Django
-from django.contrib.auth import get_user_model
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 # Standard Library
@@ -10,12 +10,10 @@ from uuid import uuid4
 # SquareletAuth
 from squarelet_auth import settings
 
-User = get_user_model()
-
 logger = logging.getLogger(__name__)
 
 
-class Organization(models.Model):
+class AbstractOrganization(models.Model):
     """An orginization users can belong to"""
 
     uuid = models.UUIDField(
@@ -30,7 +28,7 @@ class Organization(models.Model):
     users = models.ManyToManyField(
         verbose_name=_("users"),
         to=settings.AUTH_USER_MODEL,
-        through="squarelet_auth.organizations.Membership",
+        through="squarelet_auth_organizations.Membership",
         related_name="organizations",
         help_text=_("The users who are members of this organization"),
     )
@@ -59,7 +57,7 @@ class Organization(models.Model):
     # XXX how to handle plans
     plan = models.ForeignKey(
         verbose_name=_("plan"),
-        to="squarelet_auth.organizations.Plan",
+        to="squarelet_auth_organizations.Plan",
         on_delete=models.PROTECT,
         null=True,
         help_text=_("The subscription type for this organization"),
@@ -111,6 +109,11 @@ class Organization(models.Model):
         else:
             return self.name
 
+    def get_absolute_url(self):
+        return reverse(
+            "squarelet_auth_organizations:profile", kwargs={"slug": self.slug}
+        )
+
     @property
     def display_name(self):
         """Display 'Personal Account' for individual organizations"""
@@ -159,6 +162,11 @@ class Organization(models.Model):
 
     def _update_resources(self, data):
         """Allows subclasses to override to update their resources"""
+
+
+class Organization(AbstractOrganization):
+    class Meta:
+        swappable = "SQUARELET_ORGANIZATION_MODEL"
 
 
 class Membership(models.Model):
