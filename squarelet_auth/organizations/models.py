@@ -1,4 +1,5 @@
 # Django
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -209,8 +210,7 @@ class Plan(models.Model):
 
     name = models.CharField(_("name"), max_length=255, unique=True)
     slug = models.SlugField(_("slug"), max_length=255, unique=True)
-
-    # XXX JSON resource field?
+    resources = JSONField(default=dict)
 
     def __str__(self):
         return self.name

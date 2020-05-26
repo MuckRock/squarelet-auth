@@ -15,6 +15,7 @@ settings.configure(
     SOCIAL_AUTH_SQUARELET_KEY="",
     SOCIAL_AUTH_SQUARELET_SECRET="",
     SQUARELET_ORGANIZATION_MODEL="squarelet_auth_organizations.Organization",
+    BASE_URL="",
 )
 
 django.setup()
