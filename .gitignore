@@ -279,3 +279,5 @@ tags
 .pytest_cache/
 .env
 .envs/*
+
+release.sh
