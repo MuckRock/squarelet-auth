@@ -8,7 +8,6 @@ from squarelet_auth import settings
 
 
 def entitlements(apps, schema_editor):
-    Organization = apps.get_model("squarelet_auth_organizations", "Organization")
     Plan = apps.get_model("squarelet_auth_organizations", "Plan")
     Entitlement = apps.get_model("squarelet_auth_organizations", "Entitlement")
 
@@ -19,13 +18,10 @@ def entitlements(apps, schema_editor):
         entitlement = Entitlement.objects.create(
             name=plan.name, slug=plan.slug, resources=resources
         )
-        Organization.objects.filter(plan=plan).update(entitlement=entitlement)
 
 
 def delete_entitlements(apps, schema_editor):
-    Organization = apps.get_model("organizations", "Organization")
     Entitlement = apps.get_model("organizations", "Entitlement")
-    Organization.objects.update(entitlement=None)
     Entitlement.objects.all().delete()
 
 
