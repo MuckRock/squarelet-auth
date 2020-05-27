@@ -55,14 +55,6 @@ class AbstractOrganization(models.Model):
         default=True,
         help_text=_("Is this an organization for an individual user?"),
     )
-    # remove plan at some point
-    plan = models.ForeignKey(
-        verbose_name=_("plan"),
-        to="squarelet_auth_organizations.Plan",
-        on_delete=models.PROTECT,
-        null=True,
-        help_text=_("The subscription type for this organization"),
-    )
     entitlement = models.ForeignKey(
         verbose_name=_("entitlement"),
         to="squarelet_auth_organizations.Entitlement",
@@ -231,17 +223,6 @@ class Membership(models.Model):
 
     def __str__(self):
         return f"{self.user} in {self.organization}"
-
-
-class Plan(models.Model):
-    """Plans that organizations can subscribe to"""
-
-    name = models.CharField(_("name"), max_length=255, unique=True)
-    slug = models.SlugField(_("slug"), max_length=255, unique=True)
-    resources = JSONField(default=dict)
-
-    def __str__(self):
-        return self.name
 
 
 class Entitlement(models.Model):
