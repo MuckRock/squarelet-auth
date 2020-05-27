@@ -8,9 +8,9 @@ from squarelet_auth import settings
 
 
 def entitlements(apps, schema_editor):
-    Organization = apps.get_model("organizations", "Organization")
-    Plan = apps.get_model("organizations", "Plan")
-    Entitlement = apps.get_model("organizations", "Entitlement")
+    Organization = apps.get_model("squarelet_auth_organizations", "Organization")
+    Plan = apps.get_model("squarelet_auth_organizations", "Plan")
+    Entitlement = apps.get_model("squarelet_auth_organizations", "Entitlement")
 
     for plan in Plan.objects.all():
         resources = {
