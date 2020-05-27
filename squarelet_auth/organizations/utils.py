@@ -13,7 +13,14 @@ Organization = get_organization_model()
 @transaction.atomic
 def squarelet_update_or_create(uuid, data):
     """Update or create organizations based on data from squarelet"""
-    required_fields = {"name", "slug", "update_on", "plan", "max_users", "individual"}
+    required_fields = {
+        "name",
+        "slug",
+        "update_on",
+        "entitlements",
+        "max_users",
+        "individual",
+    }
     missing = required_fields - (required_fields & set(data.keys()))
     if missing:
         raise ValueError(f"Missing required fields: {missing}")

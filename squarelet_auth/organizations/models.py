@@ -55,10 +55,9 @@ class AbstractOrganization(models.Model):
         default=True,
         help_text=_("Is this an organization for an individual user?"),
     )
-    # XXX how to handle plans
-    plan = models.ForeignKey(
-        verbose_name=_("plan"),
-        to="squarelet_auth_organizations.Plan",
+    entitlement = models.ForeignKey(
+        verbose_name=_("entitlement"),
+        to="squarelet_auth_organizations.Entitlement",
         on_delete=models.PROTECT,
         null=True,
         help_text=_("The subscription type for this organization"),
@@ -134,13 +133,28 @@ class AbstractOrganization(models.Model):
     def update_data(self, data):
         """Set updated data from squarelet"""
 
-        # plan should always be created on client sites before being used
-        # get_or_create is used as a precauitionary measure
-        self.plan, created = Plan.objects.get_or_create(
-            slug=data["plan"], defaults={"name": data["plan"].replace("-", " ").title()}
-        )
-        if created:
-            logger.warning("Unknown plan: %s", data["plan"])
+        if len(data["entitlements"]) > 1:
+            logger.warning(
+                "Organization %s has multiple entitlements: %s",
+                self.pk,
+                ", ".join(e["slug"] for e in data["entitlements"]),
+            )
+        if data["entitlements"]:
+            entitlement_data = self._choose_entitlement(data["entitlements"])
+            self.entitlement, _created = Entitlement.objects.update_or_create(
+                slug=entitlement_data["slug"],
+                defaults={
+                    "name": entitlement_data["name"],
+                    "description": entitlement_data["description"],
+                    "resources": entitlement_data["resources"],
+                },
+            )
+            date_update = entitlement_data["date_update"]
+        else:
+            self.entitlement, _created = Entitlement.objects.get_or_create(
+                slug="free", defaults={"name": "Free"}
+            )
+            date_update = None
 
         self._update_resources(data)
 
@@ -163,6 +177,12 @@ class AbstractOrganization(models.Model):
 
     def _update_resources(self, data):
         """Allows subclasses to override to update their resources"""
+
+    def _choose_entitlement(self, entitlements):
+        """Allow subclasses to implement their own way to choose from
+        multiple entitlements
+        """
+        return entitlements[0]
 
 
 class Organization(AbstractOrganization):
@@ -205,12 +225,22 @@ class Membership(models.Model):
         return f"{self.user} in {self.organization}"
 
 
-class Plan(models.Model):
-    """Plans that organizations can subscribe to"""
+class Entitlement(models.Model):
+    """Entitlements granted to organizations through plans"""
 
     name = models.CharField(_("name"), max_length=255, unique=True)
     slug = models.SlugField(_("slug"), max_length=255, unique=True)
+    description = models.TextField()
     resources = JSONField(default=dict)
 
     def __str__(self):
         return self.name
+
+
+# dynamically create properties for all defined resource fields
+for field, default in settings.RESOURCE_FIELDS.items():
+    setattr(
+        Entitlement,
+        field,
+        property(lambda self, f=field, d=default: self.resources.get(f, d)),
+    )
