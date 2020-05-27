@@ -12,16 +12,13 @@ def entitlements(apps, schema_editor):
     Entitlement = apps.get_model("squarelet_auth_organizations", "Entitlement")
 
     for plan in Plan.objects.all():
-        resources = {
-            k: getattr(plan, k) for k in settings.RESOURCE_FIELDS if hasattr(plan, k)
-        }
         entitlement = Entitlement.objects.create(
-            name=plan.name, slug=plan.slug, resources=resources
+            name=plan.name, slug=plan.slug, resources=plan.resources
         )
 
 
 def delete_entitlements(apps, schema_editor):
-    Entitlement = apps.get_model("organizations", "Entitlement")
+    Entitlement = apps.get_model("squarelet_auth_organizations", "Entitlement")
     Entitlement.objects.all().delete()
 
 
