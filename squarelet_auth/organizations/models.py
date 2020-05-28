@@ -156,7 +156,7 @@ class AbstractOrganization(models.Model):
             )
             date_update = None
 
-        self._update_resources(data)
+        self._update_resources(data, date_update)
 
         # update the remaining fields
         fields = [
@@ -164,7 +164,6 @@ class AbstractOrganization(models.Model):
             "slug",
             "individual",
             "private",
-            "date_update",
             "card",
             "payment_failed",
             "avatar_url",
