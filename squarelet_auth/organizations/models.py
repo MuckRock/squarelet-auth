@@ -14,6 +14,62 @@ from squarelet_auth import settings
 logger = logging.getLogger(__name__)
 
 
+class Membership(models.Model):
+    """Through table for organization membership"""
+
+    user = models.ForeignKey(
+        verbose_name=_("user"),
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="memberships",
+        help_text=_("A user being linked to an organization"),
+    )
+    organization = models.ForeignKey(
+        verbose_name=_("organization"),
+        to=settings.ORGANIZATION_MODEL,
+        on_delete=models.CASCADE,
+        related_name="memberships",
+        help_text=_("An organization being linked to a user"),
+    )
+    active = models.BooleanField(
+        _("active"),
+        default=False,
+        help_text=_("The user is currently working on behalf of this organization"),
+    )
+    admin = models.BooleanField(
+        _("admin"),
+        default=False,
+        help_text=_("The user is an administrator for this organization"),
+    )
+
+    class Meta:
+        unique_together = ("user", "organization")
+
+    def __str__(self):
+        return f"{self.user} in {self.organization}"
+
+
+class Entitlement(models.Model):
+    """Entitlements granted to organizations through plans"""
+
+    name = models.CharField(_("name"), max_length=255, unique=True)
+    slug = models.SlugField(_("slug"), max_length=255, unique=True)
+    description = models.TextField()
+    resources = JSONField(default=dict)
+
+    def __str__(self):
+        return self.name
+
+
+# dynamically create properties for all defined resource fields
+for field, default in settings.RESOURCE_FIELDS.items():
+    setattr(
+        Entitlement,
+        field,
+        property(lambda self, f=field, d=default: self.resources.get(f, d)),
+    )
+
+
 class AbstractOrganization(models.Model):
     """An orginization users can belong to"""
 
@@ -29,7 +85,7 @@ class AbstractOrganization(models.Model):
     users = models.ManyToManyField(
         verbose_name=_("users"),
         to=settings.AUTH_USER_MODEL,
-        through="squarelet_auth_organizations.Membership",
+        through=Membership,
         related_name="organizations",
         help_text=_("The users who are members of this organization"),
     )
@@ -57,7 +113,7 @@ class AbstractOrganization(models.Model):
     )
     entitlement = models.ForeignKey(
         verbose_name=_("entitlement"),
-        to="squarelet_auth_organizations.Entitlement",
+        to=Entitlement,
         on_delete=models.PROTECT,
         null=True,
         help_text=_("The subscription type for this organization"),
@@ -187,59 +243,3 @@ class AbstractOrganization(models.Model):
 class Organization(AbstractOrganization):
     class Meta:
         swappable = "SQUARELET_ORGANIZATION_MODEL"
-
-
-class Membership(models.Model):
-    """Through table for organization membership"""
-
-    user = models.ForeignKey(
-        verbose_name=_("user"),
-        to=settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="memberships",
-        help_text=_("A user being linked to an organization"),
-    )
-    organization = models.ForeignKey(
-        verbose_name=_("organization"),
-        to=settings.ORGANIZATION_MODEL,
-        on_delete=models.CASCADE,
-        related_name="memberships",
-        help_text=_("An organization being linked to a user"),
-    )
-    active = models.BooleanField(
-        _("active"),
-        default=False,
-        help_text=_("The user is currently working on behalf of this organization"),
-    )
-    admin = models.BooleanField(
-        _("admin"),
-        default=False,
-        help_text=_("The user is an administrator for this organization"),
-    )
-
-    class Meta:
-        unique_together = ("user", "organization")
-
-    def __str__(self):
-        return f"{self.user} in {self.organization}"
-
-
-class Entitlement(models.Model):
-    """Entitlements granted to organizations through plans"""
-
-    name = models.CharField(_("name"), max_length=255, unique=True)
-    slug = models.SlugField(_("slug"), max_length=255, unique=True)
-    description = models.TextField()
-    resources = JSONField(default=dict)
-
-    def __str__(self):
-        return self.name
-
-
-# dynamically create properties for all defined resource fields
-for field, default in settings.RESOURCE_FIELDS.items():
-    setattr(
-        Entitlement,
-        field,
-        property(lambda self, f=field, d=default: self.resources.get(f, d)),
-    )
