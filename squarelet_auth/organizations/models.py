@@ -62,11 +62,11 @@ class Entitlement(models.Model):
 
 
 # dynamically create properties for all defined resource fields
-for field, default in settings.RESOURCE_FIELDS.items():
+for field_, default in settings.RESOURCE_FIELDS.items():
     setattr(
         Entitlement,
-        field,
-        property(lambda self, f=field, d=default: self.resources.get(f, d)),
+        field_,
+        property(lambda self, f=field_, d=default: self.resources.get(f, d)),
     )
 
 
@@ -230,7 +230,7 @@ class AbstractOrganization(models.Model):
                 setattr(self, field, data[field])
         self.save()
 
-    def _update_resources(self, data):
+    def _update_resources(self, data, date_update):
         """Allows subclasses to override to update their resources"""
 
     def _choose_entitlement(self, entitlements):
