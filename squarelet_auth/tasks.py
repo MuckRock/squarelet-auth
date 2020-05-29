@@ -11,8 +11,14 @@ import logging
 import requests
 
 # SquareletAuth
-from squarelet_auth import organizations, settings, users
+from squarelet_auth import settings
 from squarelet_auth.organizations import get_organization_model
+from squarelet_auth.organizations.utils import (
+    squarelet_update_or_create as org_update_or_create,
+)
+from squarelet_auth.users.utils import (
+    squarelet_update_or_create as user_update_or_create,
+)
 from squarelet_auth.utils import squarelet_get
 
 logger = logging.getLogger(__name__)
@@ -30,10 +36,7 @@ def pull_data(type_, uuid, **kwargs):
     # pylint: disable=unused-argument
     types_url = {"user": "users", "organization": "organizations"}
     types_model = {"user": User, "organization": Organization}
-    types_update = {
-        "user": users.utils.squarelet_update_or_create,
-        "organization": organizations.utils.squarelet_update_or_create,
-    }
+    types_update = {"user": user_update_or_create, "organization": org_update_or_create}
     if type_ not in types_url:
         logger.warning("Pull data received invalid type: %s", type_)
         return
