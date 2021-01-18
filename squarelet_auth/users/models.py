@@ -143,3 +143,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         which has a matching UUID
         """
         return Organization.objects.get(uuid=self.uuid)
+
+    @property
+    def verified_journalist(self):
+        """Is this user a member of a verified journalistic organization?"""
+        return self.organizations.filter(verified_journalist=True).exists()
