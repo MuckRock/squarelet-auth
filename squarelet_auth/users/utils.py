@@ -1,4 +1,5 @@
 # Django
+import django.dispatch
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
@@ -18,6 +19,8 @@ Organization = get_organization_model()
 
 logger = logging.getLogger(__name__)
 
+user_update = django.dispatch.Signal()
+
 
 @transaction.atomic
 def squarelet_update_or_create(uuid, data):
@@ -35,6 +38,8 @@ def squarelet_update_or_create(uuid, data):
     user, created = _squarelet_update_or_create(uuid, data)
 
     _update_organizations(user, data)
+
+    user_update.send(sender=User, user=user, data=data)
 
     return user, created
 
