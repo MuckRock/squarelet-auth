@@ -19,7 +19,7 @@ def get_squarelet_access_token():
     # if not in cache, lock, acquire token, put in cache
     access_token = cache.get("squarelet_access_token")
     if access_token is None:
-        with cache.lock("squarelt_access_token"):
+        with cache.lock("squarelet_access_token"):
             access_token = cache.get("squarelet_access_token")
             if access_token is None:
                 token_url = f"{settings.SQUARELET_URL}/openid/token"
