@@ -54,6 +54,7 @@ def _squarelet_update_or_create(uuid, data):
         "email_failed": "email_failed",
         "email_verified": "email_verified",
         "use_autologin": "use_autologin",
+        "bio": "bio",
     }
     user_defaults = {
         "preferred_username": "",
@@ -63,6 +64,7 @@ def _squarelet_update_or_create(uuid, data):
         "email_failed": False,
         "email_verified": False,
         "use_autologin": True,
+        "bio": "",
     }
     user_data = {user_map[k]: data.get(k, user_defaults[k]) for k in user_map}
     return User.objects.update_or_create(uuid=uuid, defaults=user_data)

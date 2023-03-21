@@ -47,6 +47,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         max_length=255,
         help_text=_("A URL which points to an avatar for the user"),
     )
+    bio = models.TextField(
+        _("bio"), blank=True, help_text=_("Public bio for the user, in Markdown")
+    )
     is_staff = models.BooleanField(
         _("staff status"),
         default=False,
