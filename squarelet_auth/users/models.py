@@ -29,17 +29,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(
         _("full name"), max_length=255, help_text=_("The user's full name")
     )
-    email = CIEmailField(
+    email = models.EmailField(
         _("email"),
         unique=True,
         null=True,
         help_text=_("The user's primary email address"),
+        db_collation="case_insensitive",
     )
-    username = CICharField(
+    username = models.CharField(
         _("username"),
         max_length=150,
         unique=True,
         help_text=_("A unique public identifier for the user"),
+        db_collation="case_insensitive",
     )
     avatar_url = models.URLField(
         _("avatar url"),
