@@ -23,7 +23,7 @@ class OrganizationAdmin(admin.ModelAdmin):
         "verified_journalist",
     )
     list_filter = ("entitlement", "private", "individual", "verified_journalist")
-    search_fields = ("name", "users__username")
+    search_fields = ("name",)
     fields = (
         "uuid",
         "name",
