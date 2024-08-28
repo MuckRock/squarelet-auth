@@ -68,6 +68,27 @@ class UserAdmin(AuthUserAdmin):
             ),
             args=(obj.individual_organization.pk,),
         )
-        return '<a href="%s">%s</a>' % (link, obj.individual_organization.name)
+        return f'<a href="{link}">{obj.individual_organization.name}</a>'
 
     org_link.short_description = "Individual Organization"
+
+    @mark_safe
+    def all_org_links(self, obj):
+        """Link to the user's other orgs"""
+        orgs = obj.organizations.filter(individual=False)
+        links = []
+        for org in orgs:
+            links.append(
+                (
+                    reverse(
+                        "admin:{}_change".format(
+                            settings.ORGANIZATION_MODEL.lower().replace(".", "_")
+                        ),
+                        args=(org.pk,),
+                    ),
+                    org.name,
+                )
+            )
+        return ", ".join(f'<a href="{link}">{name}</a>' for link, name in links)
+
+    all_org_links.short_description = "All Organizations"

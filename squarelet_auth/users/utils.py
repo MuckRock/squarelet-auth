@@ -72,12 +72,21 @@ def _squarelet_update_or_create(uuid, data):
 
 def _update_organizations(user, data):
     """Update the user's organizations"""
+    logger.info("[SQ AUTH] Updating organizations for %s", user.username)
     current_organizations = set(user.organizations.all())
     new_memberships = []
     active = True
 
     # process each organization
-    for org_data in data.get("organizations", []):
+    organizations = data.get("organizations", [])
+    organizations.sort(key=lambda x: x["individual"])
+    logger.info(
+        "[SQ AUTH] Updating organizations for %s, organizations: %s",
+        user.username,
+        ", ".join(o["name"] for o in organizations),
+    )
+    for org_data in organizations:
+        logger.info("[SQ AUTH] Org data: %s", org_data)
         organization, _ = organization_update_or_create(
             uuid=org_data["uuid"], data=org_data
         )
