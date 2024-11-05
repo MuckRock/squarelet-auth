@@ -11,7 +11,7 @@ from squarelet_auth import settings
 
 class UserAdmin(AuthUserAdmin):
     fieldsets = (
-        (None, {"fields": ("uuid", "username", "org_link")}),
+        (None, {"fields": ("uuid", "username", "org_link", "all_org_links")}),
         (_("Personal info"), {"fields": ("name", "email", "email_failed")}),
         (
             _("Permissions"),
@@ -31,6 +31,7 @@ class UserAdmin(AuthUserAdmin):
         "uuid",
         "username",
         "org_link",
+        "all_org_links",
         "name",
         "email",
         "last_login",
