@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="squarelet_auth",  # Replace with your own username
-    version="0.1.6",
+    version="0.1.7",
     author="Mitchell Kotler",
     author_email="mitch@muckrock.com",
     description="Django authentication against the MuckRock user service",

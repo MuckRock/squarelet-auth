@@ -1,7 +1,7 @@
 """Celery tasks for squarelet auth app"""
 
 # Django
-from celery.task import task
+from celery import shared_task
 from django.contrib.auth import get_user_model
 
 # Standard Library
@@ -30,7 +30,7 @@ Organization = get_organization_model()
 User = get_user_model()
 
 
-@task(autoretry_for=(requests.exceptions.RequestException,), retry_backoff=1)
+@shared_task(autoretry_for=(requests.exceptions.RequestException,), retry_backoff=1)
 def pull_data(type_, uuid, **kwargs):
     """Task to pull data from squarelet"""
     # pylint: disable=unused-argument
