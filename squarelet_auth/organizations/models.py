@@ -1,5 +1,5 @@
 # Django
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -188,6 +188,9 @@ class AbstractOrganization(models.Model):
     def update_data(self, data):
         """Set updated data from squarelet"""
 
+        if data.get("merged"):
+            self.merge(data["merged"])
+
         if len(data["entitlements"]) > 1:
             logger.warning(
                 "Organization %s has multiple entitlements: %s",
@@ -231,6 +234,11 @@ class AbstractOrganization(models.Model):
 
     def _update_resources(self, data, date_update):
         """Allows subclasses to override to update their resources"""
+
+    @transaction.atomic
+    def merge(self, uuid):
+        """Merge this organization into another"""
+        raise NotImpelmentedError
 
     def _choose_entitlement(self, entitlements):
         """Allow subclasses to implement their own way to choose from
