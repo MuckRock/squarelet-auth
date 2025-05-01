@@ -153,6 +153,14 @@ class AbstractOrganization(models.Model):
         default=False,
         help_text=_("This organization is a verified jorunalistic organization"),
     )
+    merged = models.ForeignKey(
+        to="self",
+        on_delete=models.PROTECT,
+        related_name="+",
+        help_text="The agency this agency was merged in to",
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         ordering = ("slug",)
@@ -188,7 +196,7 @@ class AbstractOrganization(models.Model):
     def update_data(self, data):
         """Set updated data from squarelet"""
 
-        if data.get("merged"):
+        if data.get("merged") and not self.merged:
             self.merge(data["merged"])
 
         if len(data["entitlements"]) > 1:
@@ -238,7 +246,14 @@ class AbstractOrganization(models.Model):
     @transaction.atomic
     def merge(self, uuid):
         """Merge this organization into another"""
-        raise NotImpelmentedError
+        other = Organization.objects.get(uuid=uuid)
+        logger.info("Merge orgs: %d %d", self.pk, other.pk)
+
+        # add all users not already in the other organization
+        self.memberships.exclude(user__in=other.users.all()).update(organization=other)
+        self.memberships.all().delete()
+
+        self.merged = other
 
     def _choose_entitlement(self, entitlements):
         """Allow subclasses to implement their own way to choose from
