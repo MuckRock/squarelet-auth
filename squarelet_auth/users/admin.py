@@ -10,7 +10,7 @@ from squarelet_auth import settings
 
 
 class UserAdmin(AuthUserAdmin):
-    fieldsets = (
+    superuser_fieldsets = (
         (None, {"fields": ("uuid", "username", "org_link", "all_org_links")}),
         (_("Personal info"), {"fields": ("name", "email", "email_failed")}),
         (
@@ -22,6 +22,20 @@ class UserAdmin(AuthUserAdmin):
                     "is_superuser",
                     "groups",
                     "user_permissions",
+                )
+            },
+        ),
+        (_("Important dates"), {"fields": ("last_login", "created_at", "updated_at")}),
+    )
+    fieldsets = (
+        (None, {"fields": ("uuid", "username", "org_link", "all_org_links")}),
+        (_("Personal info"), {"fields": ("name", "email", "email_failed")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
                 )
             },
         ),
@@ -47,6 +61,13 @@ class UserAdmin(AuthUserAdmin):
         "is_active",
     )
     search_fields = ("username_deterministic", "name", "email_deterministic")
+
+    def get_fieldsets(self, request, obj=None):
+        """Remove permission settings for non-super users"""
+        if request.user.is_superuser:
+            return self.superuser_fieldsets
+        else:
+            return self.fieldsets
 
     def get_queryset(self, request):
         """Add deterministic fields for username and email so they
