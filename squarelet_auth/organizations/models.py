@@ -162,6 +162,34 @@ class AbstractOrganization(models.Model):
         null=True,
     )
 
+    members = models.ManyToManyField(
+        to="self",
+        related_name="groups",
+        help_text=_(
+            "Organizations which are members of this organization "
+            "(useful for trade associations or other member groups)"
+        ),
+        blank=True,
+        symmetrical=False,
+    )
+    parent = models.ForeignKey(
+        verbose_name=_("parent"),
+        to="self",
+        on_delete=models.PROTECT,
+        related_name="children",
+        help_text=_("The parent organization"),
+        blank=True,
+        null=True,
+    )
+    share_resources = models.BooleanField(
+        _("share resources"),
+        default=True,
+        help_text=_(
+            "Share resources (subscriptions, credits) with all children and member "
+            "organizations. Global toggle that applies to all relationships."
+        ),
+    )
+
     class Meta:
         ordering = ("slug",)
         abstract = True
@@ -224,6 +252,10 @@ class AbstractOrganization(models.Model):
 
         self._update_resources(data, date_update)
 
+        # set relationships
+        if data.get("parent"):
+            self.parent = Organization.objects.filter(uuid=data["parent"]).first()
+
         # update the remaining fields
         fields = [
             "name",
@@ -234,11 +266,16 @@ class AbstractOrganization(models.Model):
             "payment_failed",
             "avatar_url",
             "verified_journalist",
+            "share_resources",
         ]
         for field in fields:
             if field in data:
                 setattr(self, field, data[field])
         self.save()
+
+        # set group memberships after saving (requires pk)
+        if data.get("groups"):
+            self.groups.set(Organization.objects.filter(uuid__in=data["groups"]))
 
     def _update_resources(self, data, date_update):
         """Allows subclasses to override to update their resources"""
@@ -252,6 +289,19 @@ class AbstractOrganization(models.Model):
         # add all users not already in the other organization
         self.memberships.exclude(user__in=other.users.all()).update(organization=other)
         self.memberships.all().delete()
+
+        # transfer children to the other organization
+        self.children.update(parent=other)
+
+        # transfer group memberships
+        groups = self.groups.all()
+        other.groups.add(*groups)
+        self.groups.clear()
+
+        # transfer members
+        members = self.members.all()
+        other.members.add(*members)
+        self.members.clear()
 
         self.merged = other
 
