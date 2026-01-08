@@ -9,7 +9,6 @@ from uuid import uuid4
 
 # SquareletAuth
 from squarelet_auth import settings
-from squarelet_auth.organizations.utils import squarelet_update_or_create
 
 logger = logging.getLogger(__name__)
 
@@ -224,6 +223,7 @@ class AbstractOrganization(models.Model):
 
     def update_data(self, data):
         """Set updated data from squarelet"""
+        from squarelet_auth.organizations.utils import squarelet_update_or_create
 
         if data.get("merged") and not self.merged:
             self.merge(data["merged"])
