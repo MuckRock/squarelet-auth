@@ -9,6 +9,7 @@ from uuid import uuid4
 
 # SquareletAuth
 from squarelet_auth import settings
+from squarelet_auth.organizations.utils import squarelet_update_or_create
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +255,9 @@ class AbstractOrganization(models.Model):
 
         # set relationships
         if data.get("parent"):
-            self.parent = Organization.objects.filter(uuid=data["parent"]).first()
+            self.parent, _ = squarelet_update_or_create(
+                data["parent"]["uuid"], data["parent"]
+            )
 
         # update the remaining fields
         fields = [
@@ -275,7 +278,13 @@ class AbstractOrganization(models.Model):
 
         # set group memberships after saving (requires pk)
         if data.get("groups"):
-            self.groups.set(Organization.objects.filter(uuid__in=data["groups"]))
+            groups = []
+            for group_data in data["groups"]:
+                group, _ = Organization.objects.squarelet_update_or_create(
+                    group_data["uuid"], group_data
+                )
+                groups.append(group)
+            self.groups.set(groups)
 
     def _update_resources(self, data, date_update):
         """Allows subclasses to override to update their resources"""
