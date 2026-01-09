@@ -280,9 +280,7 @@ class AbstractOrganization(models.Model):
         if data.get("groups"):
             groups = []
             for group_data in data["groups"]:
-                group, _ = Organization.objects.squarelet_update_or_create(
-                    group_data["uuid"], group_data
-                )
+                group, _ = squarelet_update_or_create(group_data["uuid"], group_data)
                 groups.append(group)
             self.groups.set(groups)
 
