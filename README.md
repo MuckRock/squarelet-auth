@@ -111,7 +111,6 @@ python manage.py migrate
 | Setting | Default | Description |
 |---|---|---|
 | `SQUARELET_URL` | `"https://accounts.muckrock.com"` | Base URL of the Squarelet service |
-| `SQUARELET_DISABLE_CREATE` | `True` | If `True`, webhook syncs won't create new users/orgs that don't already exist locally |
 | `SQUARELET_DISABLE_CREATE_AGENCY` | `True` | If `True`, agency (bot) users are never created locally |
 | `SQUARELET_CREATE_USER` | `None` | Dotted path to a custom user factory callable (see below) |
 | `SQUARELET_WHITELIST_VERIFIED_JOURNALISTS` | `False` | Restrict access to verified journalists only |
@@ -282,20 +281,12 @@ https://yourdomain.com/squarelet/webhook/
 
 The webhook validates requests using an HMAC signature derived from `SOCIAL_AUTH_SQUARELET_SECRET`. On receipt, it fires a Celery task (`squarelet_auth.tasks.pull_data`) that fetches fresh data from the Squarelet API.
 
+Webhooks only **update** existing records — they will never create a new user or organization that isn't already in your database. Users must log in via OAuth at least once before webhook syncs apply to them.
+
 Make sure Celery is running:
 
 ```bash
 celery -A myproject worker -l info
-```
-
-### `SQUARELET_DISABLE_CREATE`
-
-When `True` (the default), webhook-triggered syncs will **not** create new users or organizations — they only update existing records. This prevents Squarelet from automatically populating your database with users who have never visited your site.
-
-Set to `False` if you want to pre-populate users from webhooks:
-
-```python
-SQUARELET_DISABLE_CREATE = False
 ```
 
 ---
@@ -374,6 +365,4 @@ BASE_URL = env("BASE_URL")
 
 LOGIN_URL = "/auth/login/squarelet/"
 LOGIN_REDIRECT_URL = "/"
-
-SQUARELET_DISABLE_CREATE = True
 ```

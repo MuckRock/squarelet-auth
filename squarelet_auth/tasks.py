@@ -10,7 +10,6 @@ import logging
 import requests
 
 # SquareletAuth
-from squarelet_auth import settings
 from squarelet_auth.organizations.models import SquareletOrganization
 from squarelet_auth.organizations.utils import (
     squarelet_update_or_create as org_update_or_create,
@@ -36,14 +35,13 @@ def pull_data(type_, uuid, **kwargs):
         return
 
     if type_ == "user":
-        exists = SquareletProfile.objects.filter(uuid=uuid).exists()
+        if not SquareletProfile.objects.filter(uuid=uuid).exists():
+            # never create users from webhooks — users must log in via OAuth first
+            return
     else:
-        exists = SquareletOrganization.objects.filter(uuid=uuid).exists()
-
-    if settings.DISABLE_CREATE and not exists:
-        # if we have disabled creating new instances from squarelet
-        # do not try to pull the data unless the instance already exists locally
-        return
+        if not SquareletOrganization.objects.filter(uuid=uuid).exists():
+            # never create organizations from webhooks if they have no local presence
+            return
 
     resp = squarelet_get("/api/{}/{}/".format(types_url[type_], uuid))
     resp.raise_for_status()
