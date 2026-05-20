@@ -17,10 +17,11 @@ INTENT = getattr(settings, "SQUARELET_INTENT", "")
 
 RESOURCE_FIELDS = getattr(settings, "SQUARELET_RESOURCE_FIELDS", {})
 
+CREATE_USER = getattr(settings, "SQUARELET_CREATE_USER", None)
+
 required_settings = [
     "SOCIAL_AUTH_SQUARELET_KEY",
     "SOCIAL_AUTH_SQUARELET_SECRET",
-    "SQUARELET_ORGANIZATION_MODEL",
     "BASE_URL",
 ]
 for setting in required_settings:
@@ -31,7 +32,6 @@ for setting in required_settings:
 
 SOCIAL_AUTH_SQUARELET_KEY = settings.SOCIAL_AUTH_SQUARELET_KEY
 SOCIAL_AUTH_SQUARELET_SECRET = settings.SOCIAL_AUTH_SQUARELET_SECRET
-ORGANIZATION_MODEL = settings.SQUARELET_ORGANIZATION_MODEL
 BASE_URL = getattr(settings, "BASE_URL")
 
 AUTH_USER_MODEL = settings.AUTH_USER_MODEL

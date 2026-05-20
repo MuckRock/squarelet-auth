@@ -6,14 +6,12 @@ from django.utils.safestring import mark_safe
 
 # SquareletAuth
 from squarelet_auth import settings
-from squarelet_auth.organizations.models import Entitlement, Organization
-
-User = get_user_model()
+from squarelet_auth.organizations.models import Entitlement, SquareletOrganization
 
 
-@admin.register(Organization)
-class OrganizationAdmin(admin.ModelAdmin):
-    """Organization Admin"""
+@admin.register(SquareletOrganization)
+class SquareletOrganizationAdmin(admin.ModelAdmin):
+    """SquareletOrganization Admin"""
 
     list_display = (
         "name",
@@ -66,14 +64,13 @@ class OrganizationAdmin(admin.ModelAdmin):
     @mark_safe
     def user_link(self, obj):
         """Link to the individual org's user"""
-        user = User.objects.get(uuid=obj.uuid)
+        User = get_user_model()
+        user = User.objects.get(squarelet_profile__uuid=obj.uuid)
         link = reverse(
-            "admin:{}_change".format(
-                settings.AUTH_USER_MODEL.lower().replace(".", "_")
-            ),
+            f"admin:{user._meta.app_label}_{user._meta.model_name}_change",
             args=(user.pk,),
         )
-        return '<a href="%s">%s</a>' % (link, user.username)
+        return '<a href="%s">%s</a>' % (link, user)
 
     user_link.short_description = "User"
 

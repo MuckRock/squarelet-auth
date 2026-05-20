@@ -11,12 +11,12 @@ settings.configure(
         "django.contrib.contenttypes",
         "django.contrib.auth",
         "squarelet_auth.organizations.apps.OrganizationsConfig",
+        "squarelet_auth.users.apps.UsersConfig",
     ),
     SOCIAL_AUTH_SQUARELET_KEY="",
     SOCIAL_AUTH_SQUARELET_SECRET="",
-    SQUARELET_ORGANIZATION_MODEL="squarelet_auth_organizations.Organization",
     BASE_URL="",
 )
 
 django.setup()
-call_command("makemigrations", "squarelet_auth_organizations")
+call_command("makemigrations", "squarelet_auth_organizations", "squarelet_auth_users")

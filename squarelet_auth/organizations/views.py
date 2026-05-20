@@ -6,9 +6,7 @@ from django.shortcuts import redirect
 from django.utils.http import is_safe_url
 
 # SquareletAuth
-from squarelet_auth.organizations import get_organization_model
-
-Organization = get_organization_model()
+from squarelet_auth.organizations.models import SquareletOrganization
 
 
 @login_required
@@ -18,17 +16,17 @@ def activate(request):
     redirect_url = redirect_url if is_safe_url(redirect_url, allowed_hosts=[]) else "/"
 
     try:
-        organization = request.user.organizations.get(
+        organization = request.user.squarelet_organizations.get(
             pk=request.POST.get("organization")
         )
-        request.user.organization = organization
+        request.user.squarelet_profile.organization = organization
         messages.success(
             request,
             "You have switched your active organization to {}".format(
                 organization.display_name
             ),
         )
-    except Organization.DoesNotExist:
+    except SquareletOrganization.DoesNotExist:
         messages.error(request, "Organization does not exist")
     except ValueError:
         messages.error(request, "You are not a member of that organization")

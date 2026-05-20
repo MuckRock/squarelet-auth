@@ -1,16 +1,11 @@
 """
 Custom pipeline steps for oAuth authentication
 """
-# Django
-from django.contrib.auth import get_user_model
-
 # Standard Library
 import logging
 
 # SquareletAuth
 from squarelet_auth.users.utils import squarelet_update_or_create
-
-User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +18,20 @@ def associate_by_uuid(response, user=None, *args, **kwargs):
 
     uuid = response.get("uuid")
     if uuid:
+        from squarelet_auth.users.models import SquareletProfile
+
         try:
-            user = User.objects.get(uuid=uuid)
-        except User.DoesNotExist:
+            profile = SquareletProfile.objects.select_related("user").get(uuid=uuid)
+        except SquareletProfile.DoesNotExist:
             return None
         else:
-            return {"user": user, "is_new": False}
+            return {"user": profile.user, "is_new": False}
 
 
-def save_info(response, *args, **kwargs):
+def save_info(response, user=None, *args, **kwargs):
     """Update the user's info based on information from squarelet"""
     # pylint: disable=unused-argument
-    user, created = squarelet_update_or_create(response["uuid"], response)
+    user, created = squarelet_update_or_create(response["uuid"], response, user=user)
     return {"user": user, "is_new": created}
 
 

@@ -2,20 +2,17 @@
 import django.dispatch
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.utils.module_loading import import_string
 
 # Standard Library
 import logging
 
 # SquareletAuth
 from squarelet_auth import settings
-from squarelet_auth.organizations import get_organization_model
-from squarelet_auth.organizations.models import Membership
+from squarelet_auth.organizations.models import SquareletMembership
 from squarelet_auth.organizations.utils import (
     squarelet_update_or_create as organization_update_or_create,
 )
-
-User = get_user_model()
-Organization = get_organization_model()
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +20,7 @@ user_update = django.dispatch.Signal()
 
 
 @transaction.atomic
-def squarelet_update_or_create(uuid, data):
+def squarelet_update_or_create(uuid, data, user=None):
     """Update or create users based on data from squarelet"""
 
     required_fields = {"preferred_username", "organizations"}
@@ -35,18 +32,21 @@ def squarelet_update_or_create(uuid, data):
         # do not create agency users if they have been disabled
         return None, False
 
-    user, created = _squarelet_update_or_create(uuid, data)
+    user, created = _squarelet_update_or_create(uuid, data, user=user)
 
     _update_organizations(user, data)
 
+    User = get_user_model()
     user_update.send(sender=User, user=user, data=data)
 
     return user, created
 
 
-def _squarelet_update_or_create(uuid, data):
-    """Format user data and update or create the user"""
-    user_map = {
+def _squarelet_update_or_create(uuid, data, user=None):
+    """Format profile data and update or create the SquareletProfile"""
+    from squarelet_auth.users.models import SquareletProfile
+
+    profile_map = {
         "preferred_username": "username",
         "email": "email",
         "name": "name",
@@ -56,7 +56,7 @@ def _squarelet_update_or_create(uuid, data):
         "use_autologin": "use_autologin",
         "bio": "bio",
     }
-    user_defaults = {
+    profile_defaults = {
         "preferred_username": "",
         "email": "",
         "name": "",
@@ -66,14 +66,43 @@ def _squarelet_update_or_create(uuid, data):
         "use_autologin": True,
         "bio": "",
     }
-    user_data = {user_map[k]: data.get(k, user_defaults[k]) for k in user_map}
-    return User.objects.update_or_create(uuid=uuid, defaults=user_data)
+    profile_data = {
+        profile_map[k]: data.get(k, profile_defaults[k]) for k in profile_map
+    }
+
+    try:
+        profile = SquareletProfile.objects.get(uuid=uuid)
+        for attr, value in profile_data.items():
+            setattr(profile, attr, value)
+        profile.save()
+        return profile.user, False
+    except SquareletProfile.DoesNotExist:
+        if user is None:
+            user = _create_user(uuid, data)
+        profile = SquareletProfile.objects.create(uuid=uuid, user=user, **profile_data)
+        return user, True
+
+
+def _create_user(uuid, data):
+    """Create a new host-app User for the given Squarelet data.
+
+    If SQUARELET_CREATE_USER is set, calls that callable (dotted path).
+    Otherwise creates a user with username and email from Squarelet data.
+    """
+    User = get_user_model()
+    if settings.CREATE_USER:
+        factory = import_string(settings.CREATE_USER)
+        return factory(uuid, data)
+
+    username = data.get("preferred_username", "")
+    email = data.get("email") or None
+    return User.objects.create_user(username=username, email=email)
 
 
 def _update_organizations(user, data):
     """Update the user's organizations"""
-    logger.info("[SQ AUTH] Updating organizations for %s", user.username)
-    current_organizations = set(user.organizations.all())
+    logger.info("[SQ AUTH] Updating organizations for %s", user)
+    current_organizations = set(user.squarelet_organizations.all())
     new_memberships = []
     active = True
 
@@ -82,7 +111,7 @@ def _update_organizations(user, data):
     organizations.sort(key=lambda x: x["individual"])
     logger.info(
         "[SQ AUTH] Updating organizations for %s, organizations: %s",
-        user.username,
+        user,
         ", ".join(o["name"] for o in organizations),
     )
     for org_data in organizations:
@@ -94,14 +123,14 @@ def _update_organizations(user, data):
             # remove organizations from our set as we see them
             # any that are left will need to be removed
             current_organizations.remove(organization)
-            user.memberships.filter(organization=organization).update(
+            user.squarelet_memberships.filter(organization=organization).update(
                 admin=org_data["admin"]
             )
         else:
             # if not currently a member, create the new membership
             # automatically activate new organizations (only first one)
             new_memberships.append(
-                Membership(
+                SquareletMembership(
                     user=user,
                     organization=organization,
                     active=active,
@@ -113,18 +142,22 @@ def _update_organizations(user, data):
     if new_memberships:
         # first new membership will be made active, de-activate current
         # active org first
-        user.memberships.filter(active=True).update(active=False)
-        user.memberships.bulk_create(new_memberships)
+        user.squarelet_memberships.filter(active=True).update(active=False)
+        user.squarelet_memberships.bulk_create(new_memberships)
 
     # user must have an active organization, if the current
     # active one is removed, we will activate the user's individual organization
-    if user.organization in current_organizations:
-        user.memberships.filter(organization__individual=True).update(active=True)
+    if user.squarelet_profile.organization in current_organizations:
+        user.squarelet_memberships.filter(organization__individual=True).update(
+            active=True
+        )
 
     # never remove the user's individual organization
-    individual_organization = user.memberships.get(organization__individual=True)
+    individual_organization = user.squarelet_memberships.get(
+        organization__individual=True
+    )
     if individual_organization in current_organizations:
         logger.error("Trying to remove a user's individual organization: %s", user)
         current_organizations.remove(individual_organization)
 
-    user.memberships.filter(organization__in=current_organizations).delete()
+    user.squarelet_memberships.filter(organization__in=current_organizations).delete()

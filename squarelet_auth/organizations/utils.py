@@ -6,9 +6,8 @@ import logging
 from datetime import datetime
 
 # SquareletAuth
-from squarelet_auth.organizations import get_organization_model
+from squarelet_auth.organizations.models import SquareletOrganization
 
-Organization = get_organization_model()
 logger = logging.getLogger(__name__)
 
 
@@ -49,7 +48,7 @@ def squarelet_update_or_create(uuid, data):
                 entitlement_data["update_on"],
             )
 
-    organization, created = Organization.objects.get_or_create(uuid=uuid)
+    organization, created = SquareletOrganization.objects.get_or_create(uuid=uuid)
     organization.update_data(data)
 
     return organization, created

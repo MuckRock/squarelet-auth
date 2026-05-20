@@ -13,21 +13,21 @@ from squarelet_auth import settings
 logger = logging.getLogger(__name__)
 
 
-class Membership(models.Model):
+class SquareletMembership(models.Model):
     """Through table for organization membership"""
 
     user = models.ForeignKey(
         verbose_name=_("user"),
         to=settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="memberships",
+        related_name="squarelet_memberships",
         help_text=_("A user being linked to an organization"),
     )
     organization = models.ForeignKey(
         verbose_name=_("organization"),
-        to=settings.ORGANIZATION_MODEL,
+        to="SquareletOrganization",
         on_delete=models.CASCADE,
-        related_name="memberships",
+        related_name="squarelet_memberships",
         help_text=_("An organization being linked to a user"),
     )
     active = models.BooleanField(
@@ -69,8 +69,8 @@ for field_, default in settings.RESOURCE_FIELDS.items():
     )
 
 
-class AbstractOrganization(models.Model):
-    """An orginization users can belong to"""
+class SquareletOrganization(models.Model):
+    """An organization users can belong to"""
 
     uuid = models.UUIDField(
         _("UUID"),
@@ -84,8 +84,8 @@ class AbstractOrganization(models.Model):
     users = models.ManyToManyField(
         verbose_name=_("users"),
         to=settings.AUTH_USER_MODEL,
-        through=Membership,
-        related_name="organizations",
+        through=SquareletMembership,
+        related_name="squarelet_organizations",
         help_text=_("The users who are members of this organization"),
     )
 
@@ -151,7 +151,7 @@ class AbstractOrganization(models.Model):
     verified_journalist = models.BooleanField(
         _("verified journalist"),
         default=False,
-        help_text=_("This organization is a verified jorunalistic organization"),
+        help_text=_("This organization is a verified journalistic organization"),
     )
     merged = models.ForeignKey(
         to="self",
@@ -164,7 +164,6 @@ class AbstractOrganization(models.Model):
 
     class Meta:
         ordering = ("slug",)
-        abstract = True
 
     def __str__(self):
         if self.individual:
@@ -191,7 +190,7 @@ class AbstractOrganization(models.Model):
 
     def has_admin(self, user):
         """Is the user an admin of this organization?"""
-        return self.users.filter(pk=user.pk, memberships__admin=True).exists()
+        return self.users.filter(pk=user.pk, squarelet_memberships__admin=True).exists()
 
     def update_data(self, data):
         """Set updated data from squarelet"""
@@ -246,12 +245,14 @@ class AbstractOrganization(models.Model):
     @transaction.atomic
     def merge(self, uuid):
         """Merge this organization into another"""
-        other = Organization.objects.get(uuid=uuid)
+        other = SquareletOrganization.objects.get(uuid=uuid)
         logger.info("Merge orgs: %d %d", self.pk, other.pk)
 
         # add all users not already in the other organization
-        self.memberships.exclude(user__in=other.users.all()).update(organization=other)
-        self.memberships.all().delete()
+        self.squarelet_memberships.exclude(user__in=other.users.all()).update(
+            organization=other
+        )
+        self.squarelet_memberships.all().delete()
 
         self.merged = other
 
@@ -260,8 +261,3 @@ class AbstractOrganization(models.Model):
         multiple entitlements
         """
         return entitlements[0]
-
-
-class Organization(AbstractOrganization):
-    class Meta:
-        swappable = "SQUARELET_ORGANIZATION_MODEL"
