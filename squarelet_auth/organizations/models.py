@@ -1,6 +1,5 @@
 # Django
 from django.db import models, transaction
-from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 # Standard Library
@@ -165,11 +164,6 @@ class SquareletOrganization(models.Model):
             return f"{self.name} (Individual)"
         else:
             return self.name
-
-    def get_absolute_url(self):
-        return reverse(
-            "squarelet_auth_organizations:profile", kwargs={"slug": self.slug}
-        )
 
     @property
     def display_name(self):

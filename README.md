@@ -91,10 +91,6 @@ from django.urls import path, include
 urlpatterns = [
     path("auth/", include("social_django.urls", namespace="social")),
     path("squarelet/", include("squarelet_auth.urls")),
-    path("squarelet/organizations/", include(
-        "squarelet_auth.organizations.urls",
-        namespace="squarelet_auth_organizations",
-    )),
 ]
 ```
 
