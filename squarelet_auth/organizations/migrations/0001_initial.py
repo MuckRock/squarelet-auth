@@ -178,14 +178,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "active",
-                    models.BooleanField(
-                        default=False,
-                        help_text="The user is currently working on behalf of this organization",
-                        verbose_name="active",
-                    ),
-                ),
-                (
                     "admin",
                     models.BooleanField(
                         default=False,

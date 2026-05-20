@@ -104,11 +104,9 @@ def _update_organizations(user, data):
     logger.info("[SQ AUTH] Updating organizations for %s", user)
     current_organizations = set(user.squarelet_organizations.all())
     new_memberships = []
-    active = True
 
     # process each organization
     organizations = data.get("organizations", [])
-    organizations.sort(key=lambda x: x["individual"])
     logger.info(
         "[SQ AUTH] Updating organizations for %s, organizations: %s",
         user,
@@ -127,30 +125,16 @@ def _update_organizations(user, data):
                 admin=org_data["admin"]
             )
         else:
-            # if not currently a member, create the new membership
-            # automatically activate new organizations (only first one)
             new_memberships.append(
                 SquareletMembership(
                     user=user,
                     organization=organization,
-                    active=active,
                     admin=org_data["admin"],
                 )
             )
-            active = False
 
     if new_memberships:
-        # first new membership will be made active, de-activate current
-        # active org first
-        user.squarelet_memberships.filter(active=True).update(active=False)
         user.squarelet_memberships.bulk_create(new_memberships)
-
-    # user must have an active organization, if the current
-    # active one is removed, we will activate the user's individual organization
-    if user.squarelet_profile.organization in current_organizations:
-        user.squarelet_memberships.filter(organization__individual=True).update(
-            active=True
-        )
 
     # never remove the user's individual organization
     individual_organization = user.squarelet_memberships.get(

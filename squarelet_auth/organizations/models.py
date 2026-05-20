@@ -30,11 +30,6 @@ class SquareletMembership(models.Model):
         related_name="squarelet_memberships",
         help_text=_("An organization being linked to a user"),
     )
-    active = models.BooleanField(
-        _("active"),
-        default=False,
-        help_text=_("The user is currently working on behalf of this organization"),
-    )
     admin = models.BooleanField(
         _("admin"),
         default=False,

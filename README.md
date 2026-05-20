@@ -140,7 +140,6 @@ profile.email_failed    # bool — True if we failed to deliver email to this ad
 profile.use_autologin   # bool — user preference for autologin links
 
 # Organization access
-profile.organization            # Active SquareletOrganization
 profile.individual_organization # The user's personal SquareletOrganization
 profile.verified_journalist     # bool — member of any verified journalistic org
 
@@ -173,28 +172,6 @@ org.display_name       # "Personal Account" for individual orgs, else org.name
 org.has_member(user)   # bool
 org.has_admin(user)    # bool
 ```
-
-### Switching Active Organization
-
-POST to the `activate` view to switch a user's active organization:
-
-```html
-<form method="post" action="{% url 'squarelet_auth_organizations:activate' %}">
-    {% csrf_token %}
-    <input type="hidden" name="organization" value="{{ org.pk }}">
-    <input type="hidden" name="next" value="{{ request.path }}">
-    <button type="submit">Switch to {{ org.display_name }}</button>
-</form>
-```
-
-Or programmatically:
-
-```python
-# Set active org (raises ValueError if user is not a member)
-request.user.squarelet_profile.organization = some_org
-```
-
----
 
 ## Syncing with Your Own User Model
 

@@ -1,5 +1,5 @@
 # Django
-from django.db import models, transaction
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 # Standard Library
@@ -83,32 +83,6 @@ class SquareletProfile(models.Model):
 
     def __str__(self):
         return self.username
-
-    @property
-    def organization(self):
-        """Get the user's active organization"""
-        if hasattr(self, "active_memberships"):
-            return self.active_memberships[0].organization
-
-        return (
-            self.user.squarelet_memberships.select_related("organization")
-            .get(active=True)
-            .organization
-        )
-
-    @organization.setter
-    def organization(self, organization):
-        """Set the user's active organization"""
-        if not organization.has_member(self.user):
-            raise ValueError(
-                "Cannot set a user's active organization to an organization "
-                "they are not a member of"
-            )
-        with transaction.atomic():
-            self.user.squarelet_memberships.filter(active=True).update(active=False)
-            self.user.squarelet_memberships.filter(organization=organization).update(
-                active=True
-            )
 
     @property
     def individual_organization(self):
