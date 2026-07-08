@@ -228,12 +228,6 @@ class AbstractOrganization(models.Model):
         if data.get("merged") and not self.merged:
             self.merge(data["merged"])
 
-        if len(data["entitlements"]) > 1:
-            logger.warning(
-                "Organization %s has multiple entitlements: %s",
-                self.pk,
-                ", ".join(e["slug"] for e in data["entitlements"]),
-            )
         if data["entitlements"]:
             entitlement_data = self._choose_entitlement(data["entitlements"])
             self.entitlement, _created = Entitlement.objects.update_or_create(
@@ -313,10 +307,11 @@ class AbstractOrganization(models.Model):
         self.merged = other
 
     def _choose_entitlement(self, entitlements):
-        """Allow subclasses to implement their own way to choose from
-        multiple entitlements
-        """
-        return entitlements[0]
+        """Choose the primary entitlement (highest feature_level) for the FK"""
+        return max(
+            entitlements,
+            key=lambda e: e["resources"].get("feature_level", 0),
+        )
 
 
 class Organization(AbstractOrganization):
