@@ -13,6 +13,12 @@ from squarelet_auth import settings
 logger = logging.getLogger(__name__)
 
 
+def get_user_agent():
+    """Default requests UA with the service's identifier appended"""
+    existing_ua = requests.utils.default_user_agent()
+    return f"{existing_ua} {settings.SERVICE_USER_AGENT}".strip()
+
+
 def get_squarelet_access_token():
     """Get an access token for squarelet"""
 
@@ -28,7 +34,10 @@ def get_squarelet_access_token():
                     settings.SOCIAL_AUTH_SQUARELET_SECRET,
                 )
                 data = {"grant_type": "client_credentials"}
-                headers = {"X-Bypass-Rate-Limit": settings.BYPASS_RATE_LIMIT_SECRET}
+                headers = {
+                    "X-Bypass-Rate-Limit": settings.BYPASS_RATE_LIMIT_SECRET,
+                    "User-Agent": get_user_agent(),
+                }
                 logger.info(token_url)
                 resp = requests.post(token_url, data=data, auth=auth, headers=headers)
                 resp.raise_for_status()
@@ -48,6 +57,7 @@ def _squarelet(method, path, **kwargs):
     headers = {
         "Authorization": f"Bearer {access_token}",
         "X-Bypass-Rate-Limit": settings.BYPASS_RATE_LIMIT_SECRET,
+        "User-Agent": get_user_agent(),
     }
     return method(api_url, headers=headers, **kwargs)
 
